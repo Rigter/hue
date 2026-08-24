@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (Go 1.22)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+          check-latest: true
+
+      - name: Verify formatting
+        run: test -z "$(gofmt -l hue.go hue_test.go example/main.go tools/gendemo/main.go)"
+
+      - name: Run tests with the race detector
+        run: go test -race ./...
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Verify generated demo is current
+        run: |
+          go generate ./...
+          git diff --exit-code
