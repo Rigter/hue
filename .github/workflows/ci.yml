@@ -13,13 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: '1.22.x'
           check-latest: true
+          # This stdlib-only module has no go.sum; built-in caching otherwise
+          # fails while looking for its default dependency lockfile.
+          cache: false
 
       - name: Verify formatting
         run: test -z "$(gofmt -l hue.go hue_test.go example/main.go tools/gendemo/main.go)"
