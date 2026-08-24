@@ -100,6 +100,9 @@ func run() error {
 		}
 		section.WriteString("\n")
 	}
+	if err := pruneStaleSwatches(written); err != nil {
+		return err
+	}
 
 	if err := spliceReadme(strings.TrimRight(section.String(), "\n")); err != nil {
 		return err
@@ -141,6 +144,41 @@ func writeSwatch(name string, r, g, b uint8) error {
 		return err
 	}
 	return os.WriteFile(filepath.Join(swatchesDir, name+".png"), buf.Bytes(), 0o644)
+}
+
+// pruneStaleSwatches removes obsolete generated swatches after an extraction
+// change. The directory is generator-owned, and only six-digit hex PNG names
+// are eligible, so unrelated files are left alone.
+func pruneStaleSwatches(written map[string]bool) error {
+	entries, err := os.ReadDir(swatchesDir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := strings.TrimSuffix(entry.Name(), ".png")
+		if entry.Name() == name || !isHexColorName(name) || written[name] {
+			continue
+		}
+		if err := os.Remove(filepath.Join(swatchesDir, entry.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func isHexColorName(name string) bool {
+	if len(name) != 6 {
+		return false
+	}
+	for _, c := range name {
+		if !('0' <= c && c <= '9') && !('a' <= c && c <= 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 // spliceReadme replaces everything between the markers, leaving the

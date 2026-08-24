@@ -262,18 +262,38 @@ func splitBucket(b bucket) (bucket, bucket) {
 	channel, _ := widestChannel(b.pixels)
 
 	sort.Slice(b.pixels, func(i, j int) bool {
-		switch channel {
-		case 0:
-			return b.pixels[i].r < b.pixels[j].r
-		case 1:
-			return b.pixels[i].g < b.pixels[j].g
-		default:
-			return b.pixels[i].b < b.pixels[j].b
-		}
+		return pixelLess(b.pixels[i], b.pixels[j], channel)
 	})
 
 	mid := len(b.pixels) / 2
 	return bucket{pixels: b.pixels[:mid]}, bucket{pixels: b.pixels[mid:]}
+}
+
+// pixelLess orders pixels by the selected channel, then by the two remaining
+// channels. Median-cut uses the order to choose bucket boundaries, so a total
+// order is necessary for deterministic results across Go versions.
+func pixelLess(a, b pixel, channel int) bool {
+	var primaryA, secondaryA, tertiaryA uint8
+	var primaryB, secondaryB, tertiaryB uint8
+	switch channel {
+	case 0:
+		primaryA, secondaryA, tertiaryA = a.r, a.g, a.b
+		primaryB, secondaryB, tertiaryB = b.r, b.g, b.b
+	case 1:
+		primaryA, secondaryA, tertiaryA = a.g, a.r, a.b
+		primaryB, secondaryB, tertiaryB = b.g, b.r, b.b
+	default:
+		primaryA, secondaryA, tertiaryA = a.b, a.r, a.g
+		primaryB, secondaryB, tertiaryB = b.b, b.r, b.g
+	}
+
+	if primaryA != primaryB {
+		return primaryA < primaryB
+	}
+	if secondaryA != secondaryB {
+		return secondaryA < secondaryB
+	}
+	return tertiaryA < tertiaryB
 }
 
 // averageColor computes the mean R/G/B across a bucket's pixels, used as

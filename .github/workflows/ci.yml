@@ -36,4 +36,4 @@ jobs:
       - name: Verify generated demo is current
         run: |
           go generate ./...
-          git diff --exit-code
+          test -z "$(git status --porcelain)"

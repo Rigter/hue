@@ -146,6 +146,28 @@ func TestExtractFromImage_CompositesSemiTransparentPixelsOverWhite(t *testing.T)
 	}
 }
 
+func TestSplitBucketOrdersEqualPrimaryChannelsDeterministically(t *testing.T) {
+	left, right := splitBucket(bucket{pixels: []pixel{
+		{r: 0, g: 2, b: 2},
+		{r: 0, g: 1, b: 1},
+		{r: 0, g: 0, b: 2},
+		{r: 5, g: 0, b: 0},
+	}})
+
+	got := append(left.pixels, right.pixels...)
+	want := []pixel{
+		{r: 0, g: 0, b: 2},
+		{r: 0, g: 1, b: 1},
+		{r: 0, g: 2, b: 2},
+		{r: 5, g: 0, b: 0},
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("pixel %d: expected %+v, got %+v", i, want[i], got[i])
+		}
+	}
+}
+
 func TestExtractFromImage_IgnoreNearWhite(t *testing.T) {
 	white := color.RGBA{255, 255, 255, 255}
 	red := color.RGBA{220, 40, 40, 255}

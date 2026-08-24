@@ -97,8 +97,8 @@ below is hand-copied.
 |---|-----|-----|-------|-----------|--------|-------------|
 | <img src="./example/images/swatches/fae2b5.png" width="16" height="16" alt=""> | `#fae2b5` | 250, 226, 181 | 50.00% | 0.78 | yes | `#000000` |
 | <img src="./example/images/swatches/a48d6e.png" width="16" height="16" alt=""> | `#a48d6e` | 164, 141, 110 | 12.50% | 0.28 | no | `#000000` |
-| <img src="./example/images/swatches/e27749.png" width="16" height="16" alt=""> | `#e27749` | 226, 119, 73 | 12.50% | 0.30 | no | `#000000` |
-| <img src="./example/images/swatches/e3b29a.png" width="16" height="16" alt=""> | `#e3b29a` | 227, 178, 154 | 12.50% | 0.51 | yes | `#000000` |
+| <img src="./example/images/swatches/e2774a.png" width="16" height="16" alt=""> | `#e2774a` | 226, 119, 74 | 12.50% | 0.30 | no | `#000000` |
+| <img src="./example/images/swatches/e3b29b.png" width="16" height="16" alt=""> | `#e3b29b` | 227, 178, 155 | 12.50% | 0.51 | yes | `#000000` |
 | <img src="./example/images/swatches/7c3b23.png" width="16" height="16" alt=""> | `#7c3b23` | 124, 59, 35 | 12.49% | 0.08 | no | `#ffffff` |
 
 ### Rainbow stairs, Batu Caves
@@ -107,10 +107,10 @@ below is hand-copied.
 
 |   | Hex | RGB | Share | Luminance | Light? | Text on top |
 |---|-----|-----|-------|-----------|--------|-------------|
-| <img src="./example/images/swatches/bfa787.png" width="16" height="16" alt=""> | `#bfa787` | 191, 167, 135 | 25.00% | 0.40 | no | `#000000` |
+| <img src="./example/images/swatches/c0a887.png" width="16" height="16" alt=""> | `#c0a887` | 192, 168, 135 | 25.00% | 0.41 | no | `#000000` |
 | <img src="./example/images/swatches/081a0b.png" width="16" height="16" alt=""> | `#081a0b` | 8, 26, 11 | 25.00% | 0.01 | no | `#ffffff` |
-| <img src="./example/images/swatches/1b4a34.png" width="16" height="16" alt=""> | `#1b4a34` | 27, 74, 52 | 25.00% | 0.05 | no | `#ffffff` |
-| <img src="./example/images/swatches/724e2c.png" width="16" height="16" alt=""> | `#724e2c` | 114, 78, 44 | 12.50% | 0.09 | no | `#ffffff` |
+| <img src="./example/images/swatches/1b4b34.png" width="16" height="16" alt=""> | `#1b4b34` | 27, 75, 52 | 25.00% | 0.06 | no | `#ffffff` |
+| <img src="./example/images/swatches/714e2c.png" width="16" height="16" alt=""> | `#714e2c` | 113, 78, 44 | 12.50% | 0.09 | no | `#ffffff` |
 | <img src="./example/images/swatches/b68940.png" width="16" height="16" alt=""> | `#b68940` | 182, 137, 64 | 12.50% | 0.28 | no | `#000000` |
 
 ### Woman on a sofa
