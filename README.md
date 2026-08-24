@@ -1,5 +1,7 @@
 # hue
 
+[![CI](https://github.com/rigter/hue/actions/workflows/ci.yml/badge.svg)](https://github.com/rigter/hue/actions/workflows/ci.yml)
+
 Extract the dominant colors of an image, returned as JSON — with light/dark
 info per color so you know what text should sit on top of it.
 
