@@ -30,15 +30,13 @@ type ColorInfo struct {
 	// control than the IsLight boolean (e.g. custom contrast thresholds).
 	Luminance float64 `json:"luminance"`
 
-	// IsLight is true when the background is bright enough that dark text
-	// reads better on top of it, false when it's dark enough that light
-	// text reads better. Derived from Luminance using the standard WCAG
-	// 0.5 midpoint threshold (Luminance > 0.5 => light).
+	// IsLight classifies the color as visually light when Luminance > 0.5.
+	// This display-oriented classification is intentionally independent from
+	// RecommendedTextColor, which uses the WCAG contrast-ratio crossover.
 	IsLight bool `json:"isLight"`
 
-	// RecommendedTextColor is a ready-to-use hex color ("#000000" or
-	// "#ffffff") for text/icons placed on top of this color, so UI code
-	// doesn't have to re-derive it from IsLight.
+	// RecommendedTextColor is the "#000000" or "#ffffff" color with the
+	// greater WCAG contrast ratio against this color.
 	RecommendedTextColor string `json:"recommendedTextColor"`
 }
 
@@ -163,8 +161,14 @@ func samplePixels(img image.Image, opts Options) []pixel {
 			if a == 0 {
 				continue // fully transparent, skip
 			}
-			// RGBA() returns 16-bit values; downscale to 8-bit.
-			p := pixel{r: uint8(r >> 8), g: uint8(g >> 8), b: uint8(b >> 8)}
+			// RGBA returns alpha-premultiplied 16-bit channels. Composite partial
+			// transparency over white so extracted colors match a conventional
+			// light background rather than becoming artificially dark.
+			p := pixel{
+				r: uint8((r + 0xffff - a) >> 8),
+				g: uint8((g + 0xffff - a) >> 8),
+				b: uint8((b + 0xffff - a) >> 8),
+			}
 
 			if opts.IgnoreNearWhite && isNearWhite(p) {
 				continue
@@ -309,9 +313,12 @@ func relativeLuminance(p pixel) float64 {
 }
 
 // textColorFor returns the hex color ("#000000" or "#ffffff") that gives
-// better contrast against a background of the given luminance.
+// the greater WCAG contrast ratio against a background of the given luminance.
 func textColorFor(luminance float64) string {
-	if luminance > 0.5 {
+	// Contrast with black is (L + 0.05) / 0.05; contrast with white is
+	// 1.05 / (L + 0.05). They meet at sqrt(0.0525) - 0.05.
+	const blackTextCrossover = 0.179128784747792
+	if luminance > blackTextCrossover {
 		return "#000000"
 	}
 	return "#ffffff"

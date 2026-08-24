@@ -111,6 +111,41 @@ func TestExtractFromImage_LightDarkClassification(t *testing.T) {
 	}
 }
 
+func TestExtractFromImage_RecommendedTextUsesContrastRatio(t *testing.T) {
+	// This mid-tone brown has luminance below 0.5, so IsLight is false, but
+	// black has substantially more WCAG contrast than white on it.
+	brown := color.RGBA{164, 141, 110, 255}
+	img := makeSolidBlocksImage(10, 10, []struct {
+		color.RGBA
+		widthRatio float64
+	}{{brown, 1}})
+
+	result, err := ExtractFromImage(img, Options{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	got := result.Colors[0]
+	if got.IsLight {
+		t.Fatalf("expected the mid-tone color to remain classified as dark")
+	}
+	if got.RecommendedTextColor != "#000000" {
+		t.Errorf("expected black text for maximum contrast, got %s", got.RecommendedTextColor)
+	}
+}
+
+func TestExtractFromImage_CompositesSemiTransparentPixelsOverWhite(t *testing.T) {
+	img := image.NewNRGBA(image.Rect(0, 0, 1, 1))
+	img.SetNRGBA(0, 0, color.NRGBA{R: 255, G: 0, B: 0, A: 128})
+
+	result, err := ExtractFromImage(img, Options{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := result.Colors[0].Hex; got != "#ff7f7f" {
+		t.Errorf("expected 50%% transparent red over white as #ff7f7f, got %s", got)
+	}
+}
+
 func TestExtractFromImage_IgnoreNearWhite(t *testing.T) {
 	white := color.RGBA{255, 255, 255, 255}
 	red := color.RGBA{220, 40, 40, 255}

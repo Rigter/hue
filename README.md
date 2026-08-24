@@ -73,8 +73,8 @@ jsonBytes, err := hue.ExtractJSON(reader, hue.Options{})
 | `r`, `g`, `b`            | uint8   | 0–255 components                                                         |
 | `percentage`             | float64 | Share of sampled pixels in this color's bucket                          |
 | `luminance`               | float64 | WCAG relative luminance, 0 (black) – 1 (white)                          |
-| `isLight`                 | bool    | `luminance > 0.5`                                                        |
-| `recommendedTextColor`    | string  | `#000000` or `#ffffff`, whichever contrasts better on this color        |
+| `isLight`                 | bool    | Display classification: `luminance > 0.5`                                |
+| `recommendedTextColor`    | string  | `#000000` or `#ffffff`, whichever has the greater WCAG contrast ratio   |
 
 `colors` is sorted most-to-least dominant.
 
@@ -96,8 +96,8 @@ below is hand-copied.
 |   | Hex | RGB | Share | Luminance | Light? | Text on top |
 |---|-----|-----|-------|-----------|--------|-------------|
 | <img src="./example/images/swatches/fae2b5.png" width="16" height="16" alt=""> | `#fae2b5` | 250, 226, 181 | 50.00% | 0.78 | yes | `#000000` |
-| <img src="./example/images/swatches/a48d6e.png" width="16" height="16" alt=""> | `#a48d6e` | 164, 141, 110 | 12.50% | 0.28 | no | `#ffffff` |
-| <img src="./example/images/swatches/e27749.png" width="16" height="16" alt=""> | `#e27749` | 226, 119, 73 | 12.50% | 0.30 | no | `#ffffff` |
+| <img src="./example/images/swatches/a48d6e.png" width="16" height="16" alt=""> | `#a48d6e` | 164, 141, 110 | 12.50% | 0.28 | no | `#000000` |
+| <img src="./example/images/swatches/e27749.png" width="16" height="16" alt=""> | `#e27749` | 226, 119, 73 | 12.50% | 0.30 | no | `#000000` |
 | <img src="./example/images/swatches/e3b29a.png" width="16" height="16" alt=""> | `#e3b29a` | 227, 178, 154 | 12.50% | 0.51 | yes | `#000000` |
 | <img src="./example/images/swatches/7c3b23.png" width="16" height="16" alt=""> | `#7c3b23` | 124, 59, 35 | 12.49% | 0.08 | no | `#ffffff` |
 
@@ -107,11 +107,11 @@ below is hand-copied.
 
 |   | Hex | RGB | Share | Luminance | Light? | Text on top |
 |---|-----|-----|-------|-----------|--------|-------------|
-| <img src="./example/images/swatches/bfa787.png" width="16" height="16" alt=""> | `#bfa787` | 191, 167, 135 | 25.00% | 0.40 | no | `#ffffff` |
+| <img src="./example/images/swatches/bfa787.png" width="16" height="16" alt=""> | `#bfa787` | 191, 167, 135 | 25.00% | 0.40 | no | `#000000` |
 | <img src="./example/images/swatches/081a0b.png" width="16" height="16" alt=""> | `#081a0b` | 8, 26, 11 | 25.00% | 0.01 | no | `#ffffff` |
 | <img src="./example/images/swatches/1b4a34.png" width="16" height="16" alt=""> | `#1b4a34` | 27, 74, 52 | 25.00% | 0.05 | no | `#ffffff` |
 | <img src="./example/images/swatches/724e2c.png" width="16" height="16" alt=""> | `#724e2c` | 114, 78, 44 | 12.50% | 0.09 | no | `#ffffff` |
-| <img src="./example/images/swatches/b68940.png" width="16" height="16" alt=""> | `#b68940` | 182, 137, 64 | 12.50% | 0.28 | no | `#ffffff` |
+| <img src="./example/images/swatches/b68940.png" width="16" height="16" alt=""> | `#b68940` | 182, 137, 64 | 12.50% | 0.28 | no | `#000000` |
 
 ### Woman on a sofa
 
@@ -121,14 +121,15 @@ below is hand-copied.
 |---|-----|-----|-------|-----------|--------|-------------|
 | <img src="./example/images/swatches/1c191c.png" width="16" height="16" alt=""> | `#1c191c` | 28, 25, 28 | 49.99% | 0.01 | no | `#ffffff` |
 | <img src="./example/images/swatches/d7e6e8.png" width="16" height="16" alt=""> | `#d7e6e8` | 215, 230, 232 | 25.01% | 0.77 | yes | `#000000` |
-| <img src="./example/images/swatches/98acaf.png" width="16" height="16" alt=""> | `#98acaf` | 152, 172, 175 | 12.50% | 0.39 | no | `#ffffff` |
-| <img src="./example/images/swatches/7c7b72.png" width="16" height="16" alt=""> | `#7c7b72` | 124, 123, 114 | 6.25% | 0.20 | no | `#ffffff` |
+| <img src="./example/images/swatches/98acaf.png" width="16" height="16" alt=""> | `#98acaf` | 152, 172, 175 | 12.50% | 0.39 | no | `#000000` |
+| <img src="./example/images/swatches/7c7b72.png" width="16" height="16" alt=""> | `#7c7b72` | 124, 123, 114 | 6.25% | 0.20 | no | `#000000` |
 | <img src="./example/images/swatches/595756.png" width="16" height="16" alt=""> | `#595756` | 89, 87, 86 | 6.24% | 0.10 | no | `#ffffff` |
 
 <!-- END GENERATED DEMO -->
 
-Note how `isLight` flips on `#e3b29a` (luminance 0.51) but not on `#98acaf`
-(0.39) — that's the WCAG luminance threshold, not perceived brightness.
+`isLight` is a display classification based on a 0.5 luminance threshold.
+`recommendedTextColor` is calculated separately from the WCAG contrast ratio,
+so it can recommend black text for a color that is not classified as light.
 
 ## Options
 
@@ -138,6 +139,10 @@ Note how `isLight` flips on `#e3b29a` (luminance 0.51) but not on `#98acaf`
 | `MaxSampleDim`       | 100     | Caps sampling grid size — keeps cost bounded regardless of source resolution   |
 | `IgnoreNearWhite`    | false   | Skips near-white pixels (product photos on white backgrounds)                 |
 | `IgnoreNearBlack`    | false   | Skips near-black pixels                                                       |
+
+Fully transparent pixels are ignored. Semi-transparent pixels are composited
+over white before extraction, so their colors represent their appearance on a
+conventional light background.
 
 ## How it works
 
