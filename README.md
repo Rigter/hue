@@ -5,8 +5,10 @@
 Extract the dominant colors of an image, returned as JSON — with light/dark
 info per color so you know what text should sit on top of it.
 
-Zero external dependencies (Go stdlib only). Deterministic median-cut
-quantization, not k-means, so the same image always produces the same result.
+Zero external dependencies (Go stdlib only). Median-cut quantization picks the
+seed colors and a refinement pass settles them onto the image's real clusters.
+Seeding is deterministic and ties break on a fixed order, so the same image
+always produces the same result — no random initialization anywhere.
 
 ## Install
 
@@ -73,7 +75,7 @@ jsonBytes, err := hue.ExtractJSON(reader, hue.Options{})
 |--------------------------|---------|--------------------------------------------------------------------------|
 | `hex`                    | string  | `#rrggbb`                                                                |
 | `r`, `g`, `b`            | uint8   | 0–255 components                                                         |
-| `percentage`             | float64 | Share of sampled pixels in this color's bucket                          |
+| `percentage`             | float64 | Share of sampled pixels nearest to this color, 0–100                    |
 | `luminance`               | float64 | WCAG relative luminance, 0 (black) – 1 (white)                          |
 | `isLight`                 | bool    | Display classification: `luminance > 0.5`                                |
 | `recommendedTextColor`    | string  | `#000000` or `#ffffff`, whichever has the greater WCAG contrast ratio   |
@@ -97,11 +99,11 @@ below is hand-copied.
 
 |   | Hex | RGB | Share | Luminance | Light? | Text on top |
 |---|-----|-----|-------|-----------|--------|-------------|
-| <img src="./example/images/swatches/fae2b5.png" width="16" height="16" alt=""> | `#fae2b5` | 250, 226, 181 | 50.00% | 0.78 | yes | `#000000` |
-| <img src="./example/images/swatches/a48d6e.png" width="16" height="16" alt=""> | `#a48d6e` | 164, 141, 110 | 12.50% | 0.28 | no | `#000000` |
-| <img src="./example/images/swatches/e2774a.png" width="16" height="16" alt=""> | `#e2774a` | 226, 119, 74 | 12.50% | 0.30 | no | `#000000` |
-| <img src="./example/images/swatches/e3b29b.png" width="16" height="16" alt=""> | `#e3b29b` | 227, 178, 155 | 12.50% | 0.51 | yes | `#000000` |
-| <img src="./example/images/swatches/7c3b23.png" width="16" height="16" alt=""> | `#7c3b23` | 124, 59, 35 | 12.49% | 0.08 | no | `#ffffff` |
+| <img src="./example/images/swatches/f9e0b5.png" width="16" height="16" alt=""> | `#f9e0b5` | 249, 224, 181 | 53.65% | 0.77 | yes | `#000000` |
+| <img src="./example/images/swatches/e1784b.png" width="16" height="16" alt=""> | `#e1784b` | 225, 120, 75 | 13.54% | 0.30 | no | `#000000` |
+| <img src="./example/images/swatches/d1ab93.png" width="16" height="16" alt=""> | `#d1ab93` | 209, 171, 147 | 12.77% | 0.45 | no | `#000000` |
+| <img src="./example/images/swatches/7d361e.png" width="16" height="16" alt=""> | `#7d361e` | 125, 54, 30 | 11.32% | 0.07 | no | `#ffffff` |
+| <img src="./example/images/swatches/957a59.png" width="16" height="16" alt=""> | `#957a59` | 149, 122, 89 | 8.72% | 0.21 | no | `#000000` |
 
 ### Rainbow stairs, Batu Caves
 
@@ -109,11 +111,11 @@ below is hand-copied.
 
 |   | Hex | RGB | Share | Luminance | Light? | Text on top |
 |---|-----|-----|-------|-----------|--------|-------------|
-| <img src="./example/images/swatches/c0a887.png" width="16" height="16" alt=""> | `#c0a887` | 192, 168, 135 | 25.00% | 0.41 | no | `#000000` |
-| <img src="./example/images/swatches/081a0b.png" width="16" height="16" alt=""> | `#081a0b` | 8, 26, 11 | 25.00% | 0.01 | no | `#ffffff` |
-| <img src="./example/images/swatches/1b4b34.png" width="16" height="16" alt=""> | `#1b4b34` | 27, 75, 52 | 25.00% | 0.06 | no | `#ffffff` |
-| <img src="./example/images/swatches/714e2c.png" width="16" height="16" alt=""> | `#714e2c` | 113, 78, 44 | 12.50% | 0.09 | no | `#ffffff` |
-| <img src="./example/images/swatches/b68940.png" width="16" height="16" alt=""> | `#b68940` | 182, 137, 64 | 12.50% | 0.28 | no | `#000000` |
+| <img src="./example/images/swatches/0a1f11.png" width="16" height="16" alt=""> | `#0a1f11` | 10, 31, 17 | 35.04% | 0.01 | no | `#ffffff` |
+| <img src="./example/images/swatches/3f5030.png" width="16" height="16" alt=""> | `#3f5030` | 63, 80, 48 | 22.22% | 0.07 | no | `#ffffff` |
+| <img src="./example/images/swatches/ce8847.png" width="16" height="16" alt=""> | `#ce8847` | 206, 136, 71 | 17.53% | 0.31 | no | `#000000` |
+| <img src="./example/images/swatches/5e8770.png" width="16" height="16" alt=""> | `#5e8770` | 94, 135, 112 | 13.07% | 0.21 | no | `#000000` |
+| <img src="./example/images/swatches/e6c2a0.png" width="16" height="16" alt=""> | `#e6c2a0` | 230, 194, 160 | 12.14% | 0.58 | yes | `#000000` |
 
 ### Woman on a sofa
 
@@ -121,11 +123,11 @@ below is hand-copied.
 
 |   | Hex | RGB | Share | Luminance | Light? | Text on top |
 |---|-----|-----|-------|-----------|--------|-------------|
-| <img src="./example/images/swatches/1c191c.png" width="16" height="16" alt=""> | `#1c191c` | 28, 25, 28 | 49.99% | 0.01 | no | `#ffffff` |
-| <img src="./example/images/swatches/d7e6e8.png" width="16" height="16" alt=""> | `#d7e6e8` | 215, 230, 232 | 25.01% | 0.77 | yes | `#000000` |
-| <img src="./example/images/swatches/98acaf.png" width="16" height="16" alt=""> | `#98acaf` | 152, 172, 175 | 12.50% | 0.39 | no | `#000000` |
-| <img src="./example/images/swatches/7c7b72.png" width="16" height="16" alt=""> | `#7c7b72` | 124, 123, 114 | 6.25% | 0.20 | no | `#000000` |
-| <img src="./example/images/swatches/595756.png" width="16" height="16" alt=""> | `#595756` | 89, 87, 86 | 6.24% | 0.10 | no | `#ffffff` |
+| <img src="./example/images/swatches/151215.png" width="16" height="16" alt=""> | `#151215` | 21, 18, 21 | 40.28% | 0.01 | no | `#ffffff` |
+| <img src="./example/images/swatches/ddeaeb.png" width="16" height="16" alt=""> | `#ddeaeb` | 221, 234, 235 | 21.72% | 0.80 | yes | `#000000` |
+| <img src="./example/images/swatches/a3b8ba.png" width="16" height="16" alt=""> | `#a3b8ba` | 163, 184, 186 | 13.90% | 0.46 | no | `#000000` |
+| <img src="./example/images/swatches/3e393c.png" width="16" height="16" alt=""> | `#3e393c` | 62, 57, 60 | 12.99% | 0.04 | no | `#ffffff` |
+| <img src="./example/images/swatches/717877.png" width="16" height="16" alt=""> | `#717877` | 113, 120, 119 | 11.10% | 0.18 | no | `#000000` |
 
 <!-- END GENERATED DEMO -->
 
@@ -151,8 +153,18 @@ conventional light background.
 1. **Sample** the image on a fixed grid (`MaxSampleDim`), so a 4000×3000 photo
    and a 400×300 photo cost about the same to analyze.
 2. **Median-cut quantization**: recursively split pixels along their widest
-   color-channel range until there are `NumColors` buckets.
-3. **Average** each bucket's pixels into one representative color.
+   color-channel range until there are `NumColors` buckets, and average each
+   bucket into a candidate color. Median-cut spreads its buckets across the
+   color space, which makes it a good way to *choose* candidates.
+3. **Refine**: reassign every sampled pixel to its nearest candidate and
+   recompute the candidates from what they actually captured, repeating until
+   the assignment stops changing. Median-cut alone cannot report dominance —
+   it splits each bucket at its median index, so bucket sizes are fixed by the
+   shape of the split tree (always 50/25/25 for three colors) no matter what
+   the image looks like. On lopsided images a split also lands inside a single
+   dominant color, blending unrelated colors into one bucket. Reassignment
+   fixes both: `percentage` becomes a real measurement, and the colors land on
+   clusters that exist in the image.
 4. **Classify** each color's contrast using WCAG relative luminance.
 
 ## Development

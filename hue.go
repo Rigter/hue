@@ -69,6 +69,11 @@ func (o Options) withDefaults() Options {
 	return o
 }
 
+// maxRefineIterations bounds Lloyd's algorithm. Seeded from median-cut the
+// assignment converges in a handful of passes; the cap only guards against
+// pathological oscillation.
+const maxRefineIterations = 16
+
 // pixel is a lightweight internal representation (avoids repeated
 // color.Color -> RGBA conversions and interface overhead during sorting).
 type pixel struct {
@@ -100,34 +105,179 @@ func ExtractFromImage(img image.Image, opts Options) (Result, error) {
 		return Result{}, errors.New("dominantcolor: no pixels sampled from image")
 	}
 
+	// Median-cut picks well-spread seed colors; refine turns them into real
+	// clusters so both the colors and their shares reflect the image.
 	buckets := medianCut(pixels, opts.NumColors)
-
-	total := len(pixels)
-	colors := make([]ColorInfo, 0, len(buckets))
+	seeds := make([]pixel, 0, len(buckets))
 	for _, b := range buckets {
 		if len(b.pixels) == 0 {
 			continue
 		}
-		avg := averageColor(b.pixels)
-		luminance := relativeLuminance(avg)
+		seeds = append(seeds, averageColor(b.pixels))
+	}
+	if len(seeds) == 0 {
+		return Result{}, errors.New("hue: no colors extracted from image")
+	}
+
+	centroids, counts := refine(pixels, seeds, maxRefineIterations)
+
+	total := len(pixels)
+	colors := make([]ColorInfo, 0, len(centroids))
+	for i, c := range centroids {
+		if counts[i] == 0 {
+			continue // cluster lost every pixel to a nearer centroid
+		}
+		luminance := relativeLuminance(c)
 		colors = append(colors, ColorInfo{
-			Hex:                  hexString(avg),
-			R:                    avg.r,
-			G:                    avg.g,
-			B:                    avg.b,
-			Percentage:           round2(100 * float64(len(b.pixels)) / float64(total)),
+			Hex:                  hexString(c),
+			R:                    c.r,
+			G:                    c.g,
+			B:                    c.b,
+			Percentage:           round2(100 * float64(counts[i]) / float64(total)),
 			Luminance:            round2(luminance),
 			IsLight:              luminance > 0.5,
 			RecommendedTextColor: textColorFor(luminance),
 		})
 	}
 
-	// Most dominant first.
-	sort.Slice(colors, func(i, j int) bool {
-		return colors[i].Percentage > colors[j].Percentage
+	// Most dominant first. SliceStable plus the hex tiebreaker keeps the order
+	// reproducible when two colors hold an identical share.
+	sort.SliceStable(colors, func(i, j int) bool {
+		if colors[i].Percentage != colors[j].Percentage {
+			return colors[i].Percentage > colors[j].Percentage
+		}
+		return colors[i].Hex < colors[j].Hex
 	})
 
 	return Result{Colors: colors}, nil
+}
+
+// refine runs Lloyd's algorithm (the assignment/update loop of k-means) seeded
+// with the median-cut centroids. Median-cut splits each bucket at its median
+// *index*, so bucket populations are fixed by the shape of the split tree
+// (always 50/25/25 for NumColors=3) and say nothing about the image. Worse, on
+// unbalanced images a split lands inside a single dominant color, which merges
+// unrelated colors into one bucket and yields phantom or duplicate palette
+// entries.
+//
+// Reassigning every sampled pixel to its nearest centroid and recomputing the
+// centroids fixes both: Percentage becomes the real share of pixels, and the
+// colors converge onto the image's actual clusters. Seeding from median-cut
+// (rather than randomly, as textbook k-means does) keeps the result fully
+// deterministic, and ties are broken by lowest centroid index.
+func refine(pixels []pixel, seeds []pixel, maxIter int) ([]pixel, []int) {
+	k := len(seeds)
+	centroids := make([]pixel, k)
+	copy(centroids, seeds)
+
+	counts := make([]int, k)
+	sumR := make([]int, k)
+	sumG := make([]int, k)
+	sumB := make([]int, k)
+	assign := make([]int, len(pixels))
+	for i := range assign {
+		assign[i] = -1
+	}
+
+	for iter := 0; iter < maxIter; iter++ {
+		for i := 0; i < k; i++ {
+			counts[i], sumR[i], sumG[i], sumB[i] = 0, 0, 0, 0
+		}
+
+		changed := false
+		for pi, p := range pixels {
+			best, bestDist := 0, dist2(p, centroids[0])
+			for ci := 1; ci < k; ci++ {
+				// strict < keeps the lowest index on ties => deterministic
+				if d := dist2(p, centroids[ci]); d < bestDist {
+					best, bestDist = ci, d
+				}
+			}
+			if assign[pi] != best {
+				assign[pi] = best
+				changed = true
+			}
+			counts[best]++
+			sumR[best] += int(p.r)
+			sumG[best] += int(p.g)
+			sumB[best] += int(p.b)
+		}
+
+		empty := false
+		for ci := 0; ci < k; ci++ {
+			if counts[ci] == 0 {
+				empty = true
+				continue
+			}
+			centroids[ci] = pixel{
+				r: uint8(sumR[ci] / counts[ci]),
+				g: uint8(sumG[ci] / counts[ci]),
+				b: uint8(sumB[ci] / counts[ci]),
+			}
+		}
+
+		// A centroid can lose every pixel to a nearer one - median-cut emits
+		// duplicate seeds when a split lands inside a single dominant color.
+		// Rather than dropping the slot (which silently returns fewer colors
+		// than requested), move it onto the worst-represented pixel, the
+		// standard furthest-point reseed. That recovers small but distinct
+		// colors, e.g. the 5% blue and green blocks of a 90/5/5 image.
+		if empty && iter < maxIter-1 {
+			if reseedEmpty(pixels, assign, centroids, counts) {
+				changed = true
+			}
+		}
+
+		if !changed {
+			break
+		}
+	}
+
+	return centroids, counts
+}
+
+// reseedEmpty moves every centroid that holds no pixels onto the pixel that
+// sits furthest from the centroid it was assigned to, so the next iteration
+// can grow a real cluster there. Pixels already chosen in this pass are
+// skipped so two empty centroids never land on the same color. It reports
+// whether anything moved.
+func reseedEmpty(pixels []pixel, assign []int, centroids []pixel, counts []int) bool {
+	moved := false
+	taken := make(map[pixel]bool)
+
+	for ci := range centroids {
+		if counts[ci] != 0 {
+			continue
+		}
+
+		bestIdx, bestDist := -1, -1
+		for pi, p := range pixels {
+			if taken[p] {
+				continue
+			}
+			if d := dist2(p, centroids[assign[pi]]); d > bestDist {
+				bestIdx, bestDist = pi, d
+			}
+		}
+		if bestIdx == -1 || bestDist == 0 {
+			continue // every pixel already sits exactly on a centroid
+		}
+
+		centroids[ci] = pixels[bestIdx]
+		taken[pixels[bestIdx]] = true
+		moved = true
+	}
+
+	return moved
+}
+
+// dist2 is the squared Euclidean distance in RGB. Squared avoids a sqrt in the
+// inner loop, and monotonicity means it orders candidates identically.
+func dist2(a, b pixel) int {
+	dr := int(a.r) - int(b.r)
+	dg := int(a.g) - int(b.g)
+	db := int(a.b) - int(b.b)
+	return dr*dr + dg*dg + db*db
 }
 
 // ExtractJSON is a convenience wrapper that returns the marshaled JSON bytes
@@ -366,13 +516,6 @@ func isNearBlack(p pixel) bool {
 
 func round2(f float64) float64 {
 	return float64(int(f*100+0.5)) / 100
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func maxInt(a, b int) int {
