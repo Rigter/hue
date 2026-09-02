@@ -99,11 +99,11 @@ below is hand-copied.
 
 |   | Hex | RGB | Share | Luminance | Light? | Text on top |
 |---|-----|-----|-------|-----------|--------|-------------|
-| <img src="./example/images/swatches/f9e0b5.png" width="16" height="16" alt=""> | `#f9e0b5` | 249, 224, 181 | 53.65% | 0.77 | yes | `#000000` |
-| <img src="./example/images/swatches/e1784b.png" width="16" height="16" alt=""> | `#e1784b` | 225, 120, 75 | 13.54% | 0.30 | no | `#000000` |
-| <img src="./example/images/swatches/d1ab93.png" width="16" height="16" alt=""> | `#d1ab93` | 209, 171, 147 | 12.77% | 0.45 | no | `#000000` |
+| <img src="./example/images/swatches/f9e0b5.png" width="16" height="16" alt=""> | `#f9e0b5` | 249, 224, 181 | 53.66% | 0.77 | yes | `#000000` |
+| <img src="./example/images/swatches/e1784b.png" width="16" height="16" alt=""> | `#e1784b` | 225, 120, 75 | 13.53% | 0.30 | no | `#000000` |
+| <img src="./example/images/swatches/d1ab93.png" width="16" height="16" alt=""> | `#d1ab93` | 209, 171, 147 | 12.76% | 0.45 | no | `#000000` |
 | <img src="./example/images/swatches/7d361e.png" width="16" height="16" alt=""> | `#7d361e` | 125, 54, 30 | 11.32% | 0.07 | no | `#ffffff` |
-| <img src="./example/images/swatches/957a59.png" width="16" height="16" alt=""> | `#957a59` | 149, 122, 89 | 8.72% | 0.21 | no | `#000000` |
+| <img src="./example/images/swatches/957a59.png" width="16" height="16" alt=""> | `#957a59` | 149, 122, 89 | 8.73% | 0.21 | no | `#000000` |
 
 ### Rainbow stairs, Batu Caves
 
@@ -111,11 +111,11 @@ below is hand-copied.
 
 |   | Hex | RGB | Share | Luminance | Light? | Text on top |
 |---|-----|-----|-------|-----------|--------|-------------|
-| <img src="./example/images/swatches/0a1f11.png" width="16" height="16" alt=""> | `#0a1f11` | 10, 31, 17 | 35.04% | 0.01 | no | `#ffffff` |
-| <img src="./example/images/swatches/3f5030.png" width="16" height="16" alt=""> | `#3f5030` | 63, 80, 48 | 22.22% | 0.07 | no | `#ffffff` |
-| <img src="./example/images/swatches/ce8847.png" width="16" height="16" alt=""> | `#ce8847` | 206, 136, 71 | 17.53% | 0.31 | no | `#000000` |
-| <img src="./example/images/swatches/5e8770.png" width="16" height="16" alt=""> | `#5e8770` | 94, 135, 112 | 13.07% | 0.21 | no | `#000000` |
-| <img src="./example/images/swatches/e6c2a0.png" width="16" height="16" alt=""> | `#e6c2a0` | 230, 194, 160 | 12.14% | 0.58 | yes | `#000000` |
+| <img src="./example/images/swatches/0a1f11.png" width="16" height="16" alt=""> | `#0a1f11` | 10, 31, 17 | 34.94% | 0.01 | no | `#ffffff` |
+| <img src="./example/images/swatches/3f5030.png" width="16" height="16" alt=""> | `#3f5030` | 63, 80, 48 | 22.19% | 0.07 | no | `#ffffff` |
+| <img src="./example/images/swatches/ce8847.png" width="16" height="16" alt=""> | `#ce8847` | 206, 136, 71 | 17.54% | 0.31 | no | `#000000` |
+| <img src="./example/images/swatches/5e866f.png" width="16" height="16" alt=""> | `#5e866f` | 94, 134, 111 | 13.15% | 0.21 | no | `#000000` |
+| <img src="./example/images/swatches/e6c2a0.png" width="16" height="16" alt=""> | `#e6c2a0` | 230, 194, 160 | 12.18% | 0.58 | yes | `#000000` |
 
 ### Woman on a sofa
 
@@ -123,11 +123,11 @@ below is hand-copied.
 
 |   | Hex | RGB | Share | Luminance | Light? | Text on top |
 |---|-----|-----|-------|-----------|--------|-------------|
-| <img src="./example/images/swatches/151215.png" width="16" height="16" alt=""> | `#151215` | 21, 18, 21 | 40.28% | 0.01 | no | `#ffffff` |
+| <img src="./example/images/swatches/151215.png" width="16" height="16" alt=""> | `#151215` | 21, 18, 21 | 40.27% | 0.01 | no | `#ffffff` |
 | <img src="./example/images/swatches/ddeaeb.png" width="16" height="16" alt=""> | `#ddeaeb` | 221, 234, 235 | 21.72% | 0.80 | yes | `#000000` |
-| <img src="./example/images/swatches/a3b8ba.png" width="16" height="16" alt=""> | `#a3b8ba` | 163, 184, 186 | 13.90% | 0.46 | no | `#000000` |
-| <img src="./example/images/swatches/3e393c.png" width="16" height="16" alt=""> | `#3e393c` | 62, 57, 60 | 12.99% | 0.04 | no | `#ffffff` |
-| <img src="./example/images/swatches/717877.png" width="16" height="16" alt=""> | `#717877` | 113, 120, 119 | 11.10% | 0.18 | no | `#000000` |
+| <img src="./example/images/swatches/a3b8ba.png" width="16" height="16" alt=""> | `#a3b8ba` | 163, 184, 186 | 13.91% | 0.46 | no | `#000000` |
+| <img src="./example/images/swatches/3e393c.png" width="16" height="16" alt=""> | `#3e393c` | 62, 57, 60 | 13.02% | 0.04 | no | `#ffffff` |
+| <img src="./example/images/swatches/717877.png" width="16" height="16" alt=""> | `#717877` | 113, 120, 119 | 11.07% | 0.18 | no | `#000000` |
 
 <!-- END GENERATED DEMO -->
 
