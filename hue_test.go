@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"reflect"
 	"testing"
 )
 
@@ -39,13 +40,18 @@ func TestExtractFromImage_KnownProportions(t *testing.T) {
 	blue := color.RGBA{30, 60, 200, 255}
 	green := color.RGBA{40, 180, 90, 255}
 
-	img := makeSolidBlocksImage(300, 100, []struct {
+	// Deliberately lopsided ratios. An earlier version of this test used
+	// 50/25/25, which happens to be exactly what median-cut's equal-count
+	// splits produce for three buckets, so it passed even though the
+	// percentages were an artifact of the split tree rather than a
+	// measurement of the image.
+	img := makeSolidBlocksImage(1000, 100, []struct {
 		color.RGBA
 		widthRatio float64
 	}{
-		{red, 0.5},
-		{blue, 0.25},
-		{green, 0.25},
+		{red, 0.7},
+		{blue, 0.2},
+		{green, 0.1},
 	})
 
 	result, err := ExtractFromImage(img, Options{NumColors: 5})
@@ -60,12 +66,117 @@ func TestExtractFromImage_KnownProportions(t *testing.T) {
 		t.Fatalf("expected 3 distinct colors, got %d: %+v", len(result.Colors), result.Colors)
 	}
 
-	// Sorted descending by percentage: red (50%) must come first.
-	if result.Colors[0].Hex != "#dc2828" {
-		t.Errorf("expected #dc2828 first, got %s", result.Colors[0].Hex)
+	// The reported colors must be the ones actually in the image, not the
+	// blends that equal-count splits used to average into existence, and the
+	// shares must match the block widths.
+	want := []struct {
+		hex        string
+		percentage float64
+	}{
+		{"#dc2828", 70},
+		{"#1e3cc8", 20},
+		{"#28b45a", 10},
 	}
-	if result.Colors[0].Percentage < 49 || result.Colors[0].Percentage > 51 {
-		t.Errorf("expected ~50%% for dominant color, got %.2f", result.Colors[0].Percentage)
+	for i, w := range want {
+		got := result.Colors[i]
+		if got.Hex != w.hex {
+			t.Errorf("color %d: expected %s, got %s", i, w.hex, got.Hex)
+		}
+		if got.Percentage != w.percentage {
+			t.Errorf("color %d (%s): expected %.2f%%, got %.2f%%", i, w.hex, w.percentage, got.Percentage)
+		}
+	}
+}
+
+// TestExtractFromImage_SmallDistinctColorSurvives guards the furthest-point
+// reseed. Median-cut hands Lloyd duplicate seeds when a split lands inside a
+// heavily dominant color; without reseeding, the duplicate centroid loses
+// every pixel on the index tiebreak and the palette silently comes back short.
+func TestExtractFromImage_SmallDistinctColorSurvives(t *testing.T) {
+	red := color.RGBA{220, 40, 40, 255}
+	blue := color.RGBA{30, 60, 200, 255}
+	green := color.RGBA{40, 180, 90, 255}
+
+	img := makeSolidBlocksImage(1000, 100, []struct {
+		color.RGBA
+		widthRatio float64
+	}{
+		{red, 0.9},
+		{blue, 0.05},
+		{green, 0.05},
+	})
+
+	result, err := ExtractFromImage(img, Options{NumColors: 3})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result.Colors) != 3 {
+		t.Fatalf("expected all 3 colors to survive, got %d: %+v", len(result.Colors), result.Colors)
+	}
+	if result.Colors[0].Hex != "#dc2828" || result.Colors[0].Percentage != 90 {
+		t.Errorf("expected #dc2828 at 90%%, got %s at %.2f%%", result.Colors[0].Hex, result.Colors[0].Percentage)
+	}
+	for _, c := range result.Colors[1:] {
+		if c.Percentage != 5 {
+			t.Errorf("expected the minority colors at 5%%, got %s at %.2f%%", c.Hex, c.Percentage)
+		}
+	}
+}
+
+// TestExtractFromImage_PercentagesSumTo100 catches a whole class of regressions
+// in the reassignment step: every sampled pixel must land in exactly one
+// cluster, so the reported shares have to account for the entire sample.
+func TestExtractFromImage_PercentagesSumTo100(t *testing.T) {
+	img := makeSolidBlocksImage(1000, 100, []struct {
+		color.RGBA
+		widthRatio float64
+	}{
+		{color.RGBA{200, 30, 30, 255}, 0.42},
+		{color.RGBA{30, 200, 30, 255}, 0.31},
+		{color.RGBA{30, 30, 200, 255}, 0.17},
+		{color.RGBA{200, 200, 30, 255}, 0.10},
+	})
+
+	result, err := ExtractFromImage(img, Options{NumColors: 4})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	sum := 0.0
+	for _, c := range result.Colors {
+		sum += c.Percentage
+	}
+	// round2 on each entry allows a cent or two of drift across four colors.
+	if sum < 99.9 || sum > 100.1 {
+		t.Errorf("expected percentages to sum to ~100, got %.2f: %+v", sum, result.Colors)
+	}
+}
+
+// TestExtractFromImage_IsDeterministic protects the package's headline claim.
+// Lloyd's algorithm is only deterministic here because the seeds come from
+// median-cut and assignment ties break on the lowest centroid index.
+func TestExtractFromImage_IsDeterministic(t *testing.T) {
+	img := makeSolidBlocksImage(600, 100, []struct {
+		color.RGBA
+		widthRatio float64
+	}{
+		{color.RGBA{180, 90, 40, 255}, 0.4},
+		{color.RGBA{40, 90, 180, 255}, 0.35},
+		{color.RGBA{90, 180, 40, 255}, 0.25},
+	})
+
+	first, err := ExtractFromImage(img, Options{NumColors: 4})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for i := 0; i < 25; i++ {
+		got, err := ExtractFromImage(img, Options{NumColors: 4})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !reflect.DeepEqual(got, first) {
+			t.Fatalf("run %d differs:\n first: %+v\n got:   %+v", i, first.Colors, got.Colors)
+		}
 	}
 }
 
