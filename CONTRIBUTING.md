@@ -16,12 +16,18 @@ Run the full local check suite from the repository root:
 gofmt -w hue.go hue_test.go example/main.go tools/gendemo/main.go
 go test -race ./...
 go vet ./...
-go generate ./...
+GOTOOLCHAIN=go1.22.12 go generate ./...
 git diff --check
 ```
 
 `go generate ./...` updates the generated palette tables and swatches in the
 README. Include those changes whenever an extraction change affects the demo.
+
+The `GOTOOLCHAIN` prefix is required. The demo images are JPEGs and the stdlib
+JPEG decoder does not produce identical pixels across Go releases, so generating
+on a different release than the one CI pins (`1.22.x`) shifts the reported
+shares and fails the build. `gendemo` refuses to run on a mismatch rather than
+writing a demo CI would reject.
 
 ## Pull requests
 

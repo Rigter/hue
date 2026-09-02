@@ -173,11 +173,20 @@ conventional light background.
 go test ./...          # run tests
 go vet ./...            # static checks
 go run ./example example/images/batu-caves-stairs.jpg
-go generate ./...       # regenerate the README demo tables + swatches
+
+# regenerate the README demo tables + swatches
+GOTOOLCHAIN=go1.22.12 go generate ./...
 ```
 
 Run `go generate ./...` after any change to the quantization pipeline, so the
 demo section keeps matching what the library actually returns.
+
+It has to run on the Go release CI pins, hence the `GOTOOLCHAIN` prefix. The
+demo images are JPEGs and the stdlib JPEG decoder does not produce identical
+pixels across Go releases, so extraction works from slightly different input and
+the shares move by a hundredth. CI regenerates the demo and fails on any diff,
+so a demo generated on another release would be rejected. `gendemo` checks the
+release it is running on and refuses to write anything on a mismatch.
 
 ## Credits
 

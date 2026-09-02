@@ -19,6 +19,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/rigter/hue"
@@ -54,7 +55,32 @@ const (
 	swatchSize = 20
 )
 
+// wantToolchainPrefix is the Go release series the CI workflow pins via
+// setup-go (`go-version: 1.22.x`). It is not cosmetic: the stdlib JPEG decoder
+// does not produce identical pixels across Go releases, and the demo images are
+// JPEGs. Extraction then works from slightly different input, which moves the
+// reported shares by a hundredth and can shift a swatch by one step.
+//
+// CI regenerates the demo and fails on any diff, so a demo generated on a
+// different Go release than the one CI runs is rejected. Checking here turns
+// that into an obvious local error instead of a confusing red build.
+const wantToolchainPrefix = "go1.22."
+
+// pinnedToolchain is the exact release to use, and the last patch of the 1.22
+// series, so it will not move.
+const pinnedToolchain = "go1.22.12"
+
 func main() {
+	if !strings.HasPrefix(runtime.Version(), wantToolchainPrefix) {
+		fmt.Fprintf(os.Stderr,
+			"gendemo: needs %sx, got %s.\n"+
+				"The demo images are JPEGs and the stdlib JPEG decoder differs across Go\n"+
+				"releases, so the generated tables must come from the release CI pins.\n"+
+				"Run: GOTOOLCHAIN=%s go generate ./...\n",
+			wantToolchainPrefix, runtime.Version(), pinnedToolchain)
+		os.Exit(1)
+	}
+
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, "gendemo:", err)
 		os.Exit(1)
